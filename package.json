@@ -24,7 +24,8 @@
   "homepage": "https://github.com/Sanch9s/gallery-server#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "express-formidable": "^1.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

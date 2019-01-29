@@ -3,6 +3,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
+const formidableMiddleware = require('express-formidable');
+
 const app = express();
 const PORT = 3030;
 const { promisify, inspect } = require('util');
@@ -59,8 +61,8 @@ app.post('/gallery', (req, res) => {
       "name": "INVALID_SCHEMA",
       "description": "Bad JSON object: u'name' is a required property"
     }
-    res.statusCode = 400;
-    res.send(response);
+
+    res.status(400).send(response);
     return;
   }
 
@@ -75,8 +77,8 @@ app.post('/gallery', (req, res) => {
       "name": "INVALID_SCHEMA",
       "description": "Bad JSON object: u'name' cannot include '/'"
     }
-    res.statusCode = 400;
-    res.send(response);
+
+    res.status(400).send(response);
     return;
   }
 
@@ -93,8 +95,8 @@ app.post('/gallery', (req, res) => {
         "name": "ALREADY_EXISTS",
         "description": `Cannot create directory: directory with name ${req.body.name} already exists`
       }
-      res.statusCode = 409;
-      res.send(response);
+
+      res.status(409).send(response);
       return;
     }
 
@@ -103,8 +105,7 @@ app.post('/gallery', (req, res) => {
       "name": path.basename(newDir)
     };
 
-    res.statusCode = 201;
-    res.send(response);
+    res.status(201).send(response);
   });
 });
 
@@ -124,8 +125,8 @@ app.get('/gallery/:path', async (req, res) => {
       "path": "NOT_EXISTS",
       "description": `Cannot read directory: directory with name ${req.params.path} not exists`
     };
-    res.statusCode = 404;
-    res.send(response);
+
+    res.status(404).send(response);
   }
 
   const images = [];
@@ -151,48 +152,116 @@ app.get('/gallery/:path', async (req, res) => {
   res.send(response);
 });
 
-app.delete('/gallery/:path', async (req, res) => {
-  let response, galleryStat;
-  console.log(req.params);
-  const gallery = path.join(__dirname, 'gallery', req.params.path);
-  try {
-    galleryStat = await statAsync(path.join(gallery));
-  } catch (err) {
-    response = {
-      "code": 404,
-      "payload": {
-        "paths": ["path"],
-        "validator": "required",
-        "example": null
-      },
-      "path": "NOT_EXISTS",
-      "description": `Cannot delete directory: directory with name ${req.params.path} not exists`
-    };
-    res.statusCode = 404;
-    res.send(response);
-    return;
-  }
-  if (galleryStat.isDirectory()) {
+app.delete('/gallery/:path/:img?', (req, res) => {
+  let response;
+  if (!req.params.img) {
+    const gallery = path.join(__dirname, 'gallery', req.params.path);
     fs.rmdir(gallery, (err) => {
+      if (err) {
+        response = {
+          "code": 404,
+          "payload": {
+            "paths": ["path"],
+            "validator": "required",
+            "example": null
+          },
+          "path": "NOT_EXISTS",
+          "description": `Cannot delete directory: directory with name ${req.params.path} not exists`
+        };
+
+        res.status(404).send(response);
+        return;
+      }
       response = {
         "code": 200,
         "success": `Gallery ${req.params.path} was successfully deleted`
       };
 
-      res.statusCode = 200;
-      res.send(response);
+      res.status(200).send(response);
     })
   } else {
-    res.send("aaa");
-  }
+    const image = path.join(__dirname, 'gallery', req.params.path, req.params.img);
+    fs.unlink(image, (err) => {
+      if (err) {
+        response = {
+          "code": 404,
+          "payload": {
+            "paths": ["img"],
+            "validator": "required",
+            "example": null
+          },
+          "img": "NOT_EXISTS",
+          "description": `Cannot delete image: image with name ${req.params.img} not exists in ${req.params.path} gallery`
+        };
 
+        res.status(404).send(response);
+        return;
+      }
+      response = {
+        "code": 200,
+        "success": `Image ${req.params.img} was successfully deleted`
+      };
+
+      res.status(200).send(response);
+    })
+  }
 });
 
+app.post('/gallery/:path', formidableMiddleware(), (req, res) => {
+  let response;
+  const file = path.join(__dirname, 'gallery', req.params.path, req.files.image.name);
+  const filePath = req.files.image.path;
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      response = {
+        "code": 404,
+        "payload": {
+          "paths": ["path"],
+          "validator": "required",
+          "example": null
+        },
+        "path": "NOT_EXISTS",
+        "description": `Cannot upload image: image to upload was not found`
+      };
+
+      res.status(400).send(response);
+      return;
+    }
+    fs.writeFile(file, data, (err) => {
+      if (err) {
+        response = {
+          "code": 404,
+          "payload": {
+            "paths": ["path"],
+            "validator": "required",
+            "example": null
+          },
+          "path": "NOT_EXISTS",
+          "description": `Cannot upload image: gallery with name ${req.params.path} was not found`
+        };
+
+        res.status(404).send(response);
+        return;
+      }
+      const uploaded = [];
+      uploaded.push({
+        "path": req.files.image.name,
+        "fullpath": path.join(req.params.path, req.files.image.name),
+        "name": req.files.image.name.substring(0, req.files.image.name.indexOf('.')),
+        "modified": req.files.image.lastModifiedDate
+      })
+      res.status(201).send({ uploaded });
+    });
+  });
+});
+
+app.get('/:w*(x):h/gallery/:path', (req, res) => {
+  res.send(req.params);
+})
 
 app.use((err, req, res, next) => {
-  res.statusCode = 500;
   const response = { "TypeError": "Undefined" }
-  res.send(response);
+  res.status(500).send(response);
 });
 
 const server = http.createServer(app);
