@@ -13,6 +13,11 @@ Then run command:
 $ npm install
 ```
 
+Start a server: 
+```sh
+$ npm start
+```
+
 
 ## License
 
