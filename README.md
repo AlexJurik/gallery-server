@@ -1,6 +1,6 @@
 # gallery-server [![NPM version](https://badge.fury.io/js/gallery-server.svg)](https://npmjs.org/package/gallery-server) [![Build Status](https://travis-ci.org/Sanch9s/gallery-server.svg?branch=master)](https://travis-ci.org/Sanch9s/gallery-server)
 
-> gallery
+> REST API for working with file system
 
 ## Installation
 
