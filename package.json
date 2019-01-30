@@ -25,7 +25,8 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
-    "express-formidable": "^1.2.0"
+    "express-formidable": "^1.2.0",
+    "jimp": "^0.6.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
