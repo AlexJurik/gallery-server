@@ -22,8 +22,10 @@ app.use((req, res, next) => {
   next();
 });
 
-/** GET request to gallery endpoint
- * @returns name and path of all galleries */
+/** 
+ * GET request 'localhost:3030/gallery'
+ * @returns name and path of all galleries 
+ **/
 app.get('/gallery', async (req, res) => {
   const galleryDir = Path.join(__dirname, 'gallery');
   let galleryContent = await readdirAsync(galleryDir);
@@ -49,6 +51,14 @@ app.get('/gallery', async (req, res) => {
 });
 
 
+/** 
+ * POST request 'localhost:3030/gallery'
+ * Body Media type: application/json
+ * @example({
+ * "name": "Wild animals"
+ * }) 
+ * @returns name and path of created gallery 
+ **/
 app.post('/gallery', (req, res) => {
   const { name } = req.body;
   let response;
@@ -111,6 +121,11 @@ app.post('/gallery', (req, res) => {
   });
 });
 
+/** 
+ * GET request 'localhost:3030/gallery/:path'
+ * @param(path)
+ * @returns gallery and content 
+ **/
 app.get('/gallery/:path', async (req, res) => {
   const { path } = req.params;
   const gallery = Path.join(__dirname, 'gallery', path);
@@ -156,6 +171,10 @@ app.get('/gallery/:path', async (req, res) => {
   res.status(200).send(response);
 });
 
+/** 
+ * DELETE request 'localhost:3030/gallery/:path/:img'
+ * @param(path, img?) 
+ **/
 app.delete('/gallery/:path/:img?', (req, res) => {
   const { path, img } = req.params;
   let response;
@@ -212,6 +231,12 @@ app.delete('/gallery/:path/:img?', (req, res) => {
   }
 });
 
+/** 
+ * POST request 'localhost:3030/gallery/:path'
+ * @param(path)
+ * @file(image)
+ * @returns path, fullpath, name and modification date of uploaded image  
+ **/
 app.post('/gallery/:path', formidableMiddleware(), (req, res) => {
   const { image } = req.files;
   const { path } = req.params;
@@ -262,6 +287,11 @@ app.post('/gallery/:path', formidableMiddleware(), (req, res) => {
   });
 });
 
+/** 
+ * GET request 'localhost:3030/{w}x{h}/gallery/:path/:img'
+ * @param(width, height, path, img)
+ * @returns resized image  
+ **/
 app.get('/:w*(x):h/gallery/:path/:img', async (req, res) => {
   const { w, h, path, img } = req.params;
   let response, files;
@@ -340,6 +370,9 @@ app.get('/:w*(x):h/gallery/:path/:img', async (req, res) => {
   res.status(200).sendFile(resizedImage);
 });
 
+/** 
+ * Internal server error
+ **/
 app.use((err, req, res) => {
   const response = { "Error": "Undefined" }
   res.status(500).send(err);
